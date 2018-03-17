@@ -9,77 +9,169 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    // =====================================
-    // WE ARE ADDING TOO MUCH RESPONSABILITY TO ONE SINGLE CLASS:
-    //  IT IS NO ONLY KEEPING THE ENTRIES BUT ALSO MANAGING ALL THE PERSISTENCE (SAVE , LOAD, LOAD...)
-    //  lAKE THIS WE MORE REASONS TO CHANGE THE CLASS..
-    // =====================================
-
-    public class Journal
+    public enum Color
     {
-        private readonly List<string> entries = new List<string>();
-
-        private static int count = 0;
-
-        public int AddEntry (string text)
-        {
-            entries.Add($"{++count}: {text}");
-            return count; // momento patern
-        }
-
-        public void RemoveEntry(int index)
-        {
-            entries.RemoveAt(index);
-        }
-
-        public override string ToString()
-        {
-            return string.Join(Environment.NewLine, entries);
-        }
-
-        // SERIA ENVIADO PRA PERSISTENCE
-        //public void Save(string filename)
-        //{
-        //    File.WriteAllText(filename, ToString());
-        //}
-
-        //public static Journal Load(string filename)
-        //{
-
-        //}
-
-        //public void Load (Uri uri)
-        //{
-
-        //}
+        Red, Green, Blue
     }
 
-    public class Persistence
+    public enum Size
     {
-        public void SaveToFile(Journal j, string filename, bool overwrite = false)
+        Small, Medium, Large, Huge
+    }
+
+    public class Product
+    {
+        public string Name;
+        public Color Color;
+        public Size Size;
+
+        public Product(string name, Color color, Size size)
         {
-            if (overwrite || File.Exists(filename))
+            Name = name;
+            Color = color;
+            Size = size;
+        }
+    }
+
+    public class Productfilter
+    {
+        public IEnumerable<Product> FilterBySize(IEnumerable<Product> products, Size size)
+        {
+            foreach (var p in products)
             {
-                File.WriteAllText(filename, j.ToString());
+                if (p.Size == size)
+                    yield return p;
             }
         }
-            
+
+        public IEnumerable<Product> FilterByColor(IEnumerable<Product> products, Color color)
+        {
+            foreach (var p in products)
+            {
+                if (p.Color == color)
+                    yield return p;
+            }
+        }
+
+        public IEnumerable<Product> FilterBySizeAndColor(IEnumerable<Product> products, Color color, Size size)
+        {
+            foreach (var p in products)
+            {
+                if (p.Color == color && p.Size == size)
+                    yield return p;
+            }
+        }
+    }
+
+    // SOLUCAO - Usar INTERFACES para EXTENDER as Funcionalidades da classe 
+    public interface ISpecification<T>
+    {
+        bool IsSatisfied(T t);
+    }
+
+    // Nessa interface se recebe um bunch of items e uma interface de Specificacao para servir de criterio para o filtro
+    public interface IFilter<T>
+    {
+        IEnumerable<T> Filter(IEnumerable<T> items, ISpecification<T> spec);
+    }
+
+    public class ColorSpecification : ISpecification<Product>
+    {
+        private Color color;
+
+        public ColorSpecification(Color color)
+        {
+            this.color = color;
+        }
+
+        public bool IsSatisfied(Product t)
+        {
+            if (t.Color == color)
+                return true;
+
+            return false;
+        }
+    }
+
+    public class SizeSpecification : ISpecification<Product>
+    {
+        private Size size;
+
+        public SizeSpecification(Size size)
+        {
+            this.size = size;
+        }
+
+        public bool IsSatisfied(Product t)
+        {
+            return t.Size == this.size;
+        }
+    }
+
+    public class AndSpecification<T> : ISpecification<T>
+    {
+        ISpecification<T> first, second;
+
+        public AndSpecification(ISpecification<T> first, ISpecification<T> second)
+        {
+            this.first = first ?? throw new ArgumentNullException(paramName: nameof(first));
+            this.second = second ?? throw new ArgumentNullException(paramName: nameof(second));
+        }
+
+        public bool IsSatisfied(T t)
+        {
+            return first.IsSatisfied(t) && second.IsSatisfied(t); 
+        }
+    }
+
+    public class BetterFilter : IFilter<Product>
+    {
+        public IEnumerable<Product> Filter(IEnumerable<Product> items, ISpecification<Product> spec)
+        {
+            foreach (var i in items)
+            {
+                if (spec.IsSatisfied(i))
+                    yield return i;
+            }
+        }
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            var j = new Journal();
-            j.AddEntry("I met professor X today");
-            j.AddEntry("I ate pizza");
-            Console.WriteLine(j);
 
-            // CRIADO O OBJ para GARANTIR PERSISTENCE em classe SEPARADA
-            var p = new Persistence();
-            var filename = @"C:\Users\Romeu\Desktop\journal.txt";
-            p.SaveToFile(j, filename, true);
-            Process.Start(filename);
+            var apple = new Product("Apple", Color.Green, Size.Small);
+            var tree = new Product("Tree", Color.Green, Size.Large);
+            var house = new Product("House", Color.Blue, Size.Large);
+
+            Product[] products = { apple, tree, house };
+
+            var pf = new Productfilter();
+            Console.WriteLine("Green products (old): ");
+
+            foreach (var p in pf.FilterByColor(products, Color.Green))
+            {
+                Console.WriteLine($" - {p.Name} is green");
+            }
+            Console.WriteLine("\nManeira correta, usando interfaces:\n");
+
+            var bf = new BetterFilter();
+            Console.WriteLine("Greens product (new): ");
+            foreach (var p in bf.Filter(products, new ColorSpecification(Color.Green)))
+            {
+                Console.WriteLine($" - {p.Name} is green");
+            }
+
+            Console.WriteLine("Large Blue items: (AndSpecification)");
+
+            foreach (var p in bf.Filter(products, 
+                new AndSpecification<Product>(
+                new ColorSpecification(Color.Blue),
+                new SizeSpecification(Size.Large))))
+            {
+                Console.WriteLine($" - {p.Name} is Blue and Large");
+            }
         }
     }
 }
