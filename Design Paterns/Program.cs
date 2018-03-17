@@ -9,169 +9,56 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    public enum Color
+    // Sem o VIRTUAL E OVERRIDE  o novo set na classe herdada (Square) nao funciona ao realizar uma operacao de Upcasting (necessário trocar o NEW pelo OVERRIDE e adicionar o VITURAL na classe mae
+    public class Rectangle
     {
-        Red, Green, Blue
+        public virtual int Width { get; set; }
+        //public int Width { get; set; }
+        public virtual int Height { get; set; }
+        //public int  Height { get; set; }
+
+        public Rectangle()
+        {
+
+        }
+
+        public Rectangle(int width, int height)
+        {
+            this.Height = height;
+            this.Width = width;
+        }
+
+        public override string ToString() => $"{nameof(Width)}: {Width}, {nameof(Height)}: {Height}";
     }
 
-    public enum Size
+    public class Square : Rectangle
     {
-        Small, Medium, Large, Huge
-    }
-
-    public class Product
-    {
-        public string Name;
-        public Color Color;
-        public Size Size;
-
-        public Product(string name, Color color, Size size)
+        //public new int Width
+        public override int Width
         {
-            Name = name;
-            Color = color;
-            Size = size;
-        }
-    }
-
-    public class Productfilter
-    {
-        public IEnumerable<Product> FilterBySize(IEnumerable<Product> products, Size size)
-        {
-            foreach (var p in products)
-            {
-                if (p.Size == size)
-                    yield return p;
-            }
+            set => base.Width = base.Height = value;
         }
 
-        public IEnumerable<Product> FilterByColor(IEnumerable<Product> products, Color color)
+        //public new int Height
+        public override int Height
         {
-            foreach (var p in products)
-            {
-                if (p.Color == color)
-                    yield return p;
-            }
-        }
-
-        public IEnumerable<Product> FilterBySizeAndColor(IEnumerable<Product> products, Color color, Size size)
-        {
-            foreach (var p in products)
-            {
-                if (p.Color == color && p.Size == size)
-                    yield return p;
-            }
-        }
-    }
-
-    // SOLUCAO - Usar INTERFACES para EXTENDER as Funcionalidades da classe 
-    public interface ISpecification<T>
-    {
-        bool IsSatisfied(T t);
-    }
-
-    // Nessa interface se recebe um bunch of items e uma interface de Specificacao para servir de criterio para o filtro
-    public interface IFilter<T>
-    {
-        IEnumerable<T> Filter(IEnumerable<T> items, ISpecification<T> spec);
-    }
-
-    public class ColorSpecification : ISpecification<Product>
-    {
-        private Color color;
-
-        public ColorSpecification(Color color)
-        {
-            this.color = color;
-        }
-
-        public bool IsSatisfied(Product t)
-        {
-            if (t.Color == color)
-                return true;
-
-            return false;
-        }
-    }
-
-    public class SizeSpecification : ISpecification<Product>
-    {
-        private Size size;
-
-        public SizeSpecification(Size size)
-        {
-            this.size = size;
-        }
-
-        public bool IsSatisfied(Product t)
-        {
-            return t.Size == this.size;
-        }
-    }
-
-    public class AndSpecification<T> : ISpecification<T>
-    {
-        ISpecification<T> first, second;
-
-        public AndSpecification(ISpecification<T> first, ISpecification<T> second)
-        {
-            this.first = first ?? throw new ArgumentNullException(paramName: nameof(first));
-            this.second = second ?? throw new ArgumentNullException(paramName: nameof(second));
-        }
-
-        public bool IsSatisfied(T t)
-        {
-            return first.IsSatisfied(t) && second.IsSatisfied(t); 
-        }
-    }
-
-    public class BetterFilter : IFilter<Product>
-    {
-        public IEnumerable<Product> Filter(IEnumerable<Product> items, ISpecification<Product> spec)
-        {
-            foreach (var i in items)
-            {
-                if (spec.IsSatisfied(i))
-                    yield return i;
-            }
+            set => base.Height = base.Width = value;
         }
     }
 
     class Program
     {
+        static public int area(Rectangle r) => r.Width * r.Height;
+
         static void Main(string[] args)
         {
+            Rectangle rc = new Rectangle(2,3);
+            Console.WriteLine($"{rc} has area {area(rc)}");
 
-            var apple = new Product("Apple", Color.Green, Size.Small);
-            var tree = new Product("Tree", Color.Green, Size.Large);
-            var house = new Product("House", Color.Blue, Size.Large);
-
-            Product[] products = { apple, tree, house };
-
-            var pf = new Productfilter();
-            Console.WriteLine("Green products (old): ");
-
-            foreach (var p in pf.FilterByColor(products, Color.Green))
-            {
-                Console.WriteLine($" - {p.Name} is green");
-            }
-            Console.WriteLine("\nManeira correta, usando interfaces:\n");
-
-            var bf = new BetterFilter();
-            Console.WriteLine("Greens product (new): ");
-            foreach (var p in bf.Filter(products, new ColorSpecification(Color.Green)))
-            {
-                Console.WriteLine($" - {p.Name} is green");
-            }
-
-            Console.WriteLine("Large Blue items: (AndSpecification)");
-
-            foreach (var p in bf.Filter(products, 
-                new AndSpecification<Product>(
-                new ColorSpecification(Color.Blue),
-                new SizeSpecification(Size.Large))))
-            {
-                Console.WriteLine($" - {p.Name} is Blue and Large");
-            }
+            Square sq = new Square();
+            sq.Width = 4;
+            Console.WriteLine($"{sq} has area {area(sq)}");    
         }
+
     }
 }
