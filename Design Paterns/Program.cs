@@ -9,55 +9,82 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    // Sem o VIRTUAL E OVERRIDE  o novo set na classe herdada (Square) nao funciona ao realizar uma operacao de Upcasting (necessário trocar o NEW pelo OVERRIDE e adicionar o VITURAL na classe mae
-    public class Rectangle
+    public enum Relationship
     {
-        public virtual int Width { get; set; }
-        //public int Width { get; set; }
-        public virtual int Height { get; set; }
-        //public int  Height { get; set; }
-
-        public Rectangle()
-        {
-
-        }
-
-        public Rectangle(int width, int height)
-        {
-            this.Height = height;
-            this.Width = width;
-        }
-
-        public override string ToString() => $"{nameof(Width)}: {Width}, {nameof(Height)}: {Height}";
+        Parent,
+        Sibling,
+        Child
+    }
+    
+    public class Person
+    {
+        public string Name;
+        //public DateTime DateOfBirth;
     }
 
-    public class Square : Rectangle
+    public interface IRelationshipBrowser
     {
-        //public new int Width
-        public override int Width
-        {
-            set => base.Width = base.Height = value;
-        }
-
-        //public new int Height
-        public override int Height
-        {
-            set => base.Height = base.Width = value;
-        }
+        IEnumerable<Person> FindAllChildrenOf(string name);
     }
 
-    class Program
+    // LOW-LEVEL
+    public class Relationships : IRelationshipBrowser
     {
-        static public int area(Rectangle r) => r.Width * r.Height;
+        // TUPLEs - tuplas - Incluir nos pacotes do NUGET o --- System.ValueTuple ---
+        private List<(Person, Relationship, Person)> relations = 
+            new List<(Person, Relationship, Person)>();
+
+        public void AddParentAndChild (Person parent, Person child)
+        {
+            relations.Add((parent, Relationship.Parent, child));
+
+            relations.Add((child, Relationship.Child, parent));
+        }
+
+        public IEnumerable<Person> FindAllChildrenOf(string name)
+        {
+            foreach (var r in relations.Where(x => x.Item1.Name == name && x.Item2 == Relationship.Parent))
+            {
+                yield return r.Item3;
+            }
+        }
+
+        // Public Getter for the relations field
+        //public List<(Person, Relationship, Person)> Relations => relations;
+    }
+
+    class Research
+    {
+        //public Research(Relationships relationships)
+        //{
+        //    var relations = relationships.Relations;
+
+        //    foreach (var r in relations.Where( x => x.Item1.Name == "John" && x.Item2 == Relationship.Parent))
+        //    {
+        //        Console.WriteLine($"John has a child called {r.Item3.Name}");
+        //    }
+        //}
+
+        public Research(IRelationshipBrowser browser)
+        {
+            foreach (var p in browser.FindAllChildrenOf("John"))
+            {
+                Console.WriteLine($"John has a child called {p.Name}");
+            }
+        }
+        
 
         static void Main(string[] args)
         {
-            Rectangle rc = new Rectangle(2,3);
-            Console.WriteLine($"{rc} has area {area(rc)}");
+            var parent = new Person { Name = "John" };
+            var child1= new Person { Name = "Chris" };
+            var child2 = new Person { Name = "Mary" };
 
-            Square sq = new Square();
-            sq.Width = 4;
-            Console.WriteLine($"{sq} has area {area(sq)}");    
+            var relationships = new Relationships();
+            relationships.AddParentAndChild(parent, child1);
+            relationships.AddParentAndChild(parent, child2);
+
+            new Research(relationships);
         }
 
     }
