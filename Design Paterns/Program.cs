@@ -9,33 +9,38 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    // Reviewing PROTOTYPE PATTERN - Deep Copying
+    // Reviewing SINGLETON PATTERN 
+    public class SingletonTester
+    {
+        
+        public static bool IsSingleton(Func<object> func)
+        {
+            // todo
+            var instance1 = func();
+            var instance2 = func();
+
+            //return Object.Equals(instance1, instance2);
+            return instance1.Equals(instance2);
+            //return ReferenceEquals(instance1, instance2);
+
+        }
+
+    }
 
     public class Point
     {
-        public int X, Y;
-
-        public Point DeepCopy()
-        {
-            return new Point()
-            {
-                X = this.X,
-                Y = this.Y
-            };
-        }
+        public int X { get; set; }
+        public int Y { get; set; }
     }
 
-    public class Line
+    public class PointFactory
     {
-        public Point Start, End;
+        // Garantindo que sera originado sempre o mesmo objeto pra dar True na comparacao
+        private static Point origen = new Point() { X = 0, Y = 0 };
 
-        public Line DeepCopy()
+        public static Point Origen()
         {
-            return new Line()
-            {
-                Start = this.Start.DeepCopy(),
-                End = this.End.DeepCopy()
-            };
+            return origen;
         }
     }
 
@@ -44,15 +49,8 @@ namespace Design_Paterns
 
         static void Main(string[] args)
         {
-            var line = new Line();
-            line.Start = new Point() { X = 1, Y = 2 };
-            line.End = new Point() { X = 1, Y = 2 };
-
-            var line2 = line.DeepCopy();
-            line2.Start.X = 2;
-
-            Console.WriteLine($"Line 1, Start - X: {line.Start.X}, Y: {line.Start.Y}");
-            Console.WriteLine($"Line 2, Start - X: {line2.Start.X}, Y: {line2.Start.Y}");
+            var isEqual = SingletonTester.IsSingleton(PointFactory.Origen);
+            Console.WriteLine($"Is the object a singleton? {isEqual}");
 
 
         }
