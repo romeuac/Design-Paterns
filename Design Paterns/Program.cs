@@ -9,82 +9,77 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    public enum Relationship
+    public class Code
     {
-        Parent,
-        Sibling,
-        Child
-    }
-    
-    public class Person
-    {
-        public string Name;
-        //public DateTime DateOfBirth;
+        public string className { get; set; }
+        public List<(string, string)> fields = new List<(string, string)>();
+         
+        //public List<string> fieldTypes = new List<string>();
+        //public List<string> fieldNames = new List<string>();
+
     }
 
-    public interface IRelationshipBrowser
+    // Separte component to build the object CODE
+    public class CodeBuilder
     {
-        IEnumerable<Person> FindAllChildrenOf(string name);
-    }
+        private Code code = new Code();
 
-    // LOW-LEVEL
-    public class Relationships : IRelationshipBrowser
-    {
-        // TUPLEs - tuplas - Incluir nos pacotes do NUGET o --- System.ValueTuple ---
-        private List<(Person, Relationship, Person)> relations = 
-            new List<(Person, Relationship, Person)>();
-
-        public void AddParentAndChild (Person parent, Person child)
+        public CodeBuilder(string className)
         {
-            relations.Add((parent, Relationship.Parent, child));
-
-            relations.Add((child, Relationship.Child, parent));
+            this.code.className = className ?? throw new ArgumentNullException(paramName: nameof(className));
         }
 
-        public IEnumerable<Person> FindAllChildrenOf(string name)
+        public CodeBuilder AddField(string fieldName, string fieldType)
         {
-            foreach (var r in relations.Where(x => x.Item1.Name == name && x.Item2 == Relationship.Parent))
+            code.fields.Add((fieldType, fieldName));
+            //code.fieldTypes.Add(fieldType);
+            //code.fieldNames.Add(fieldName);
+            return this;
+        }
+
+        private string ToStringImpl()
+        {
+            var sb = new StringBuilder();
+            int indentSize = 2;
+            var i = new string(' ', indentSize);
+
+            if (!string.IsNullOrEmpty(code.className))
             {
-                yield return r.Item3;
+                //sb.Append(new string(' ', indentSize));
+                sb.AppendLine("public class " + code.className);
+                sb.AppendLine("{");
             }
+
+            foreach (var field in code.fields)
+            {
+                sb.Append(new string(' ', indentSize));
+                sb.AppendLine("public " + field.Item1 + " " + field.Item2 + ";");
+            }
+
+            sb.AppendLine("}");
+            return sb.ToString();
         }
 
-        // Public Getter for the relations field
-        //public List<(Person, Relationship, Person)> Relations => relations;
+        public override string ToString()
+        {
+            return ToStringImpl();
+        }
     }
 
-    class Research
-    {
-        //public Research(Relationships relationships)
-        //{
-        //    var relations = relationships.Relations;
+    //public class FieldBuilder : CodeBuilder
+    //{
 
-        //    foreach (var r in relations.Where( x => x.Item1.Name == "John" && x.Item2 == Relationship.Parent))
-        //    {
-        //        Console.WriteLine($"John has a child called {r.Item3.Name}");
-        //    }
-        //}
+    //}
 
-        public Research(IRelationshipBrowser browser)
-        {
-            foreach (var p in browser.FindAllChildrenOf("John"))
-            {
-                Console.WriteLine($"John has a child called {p.Name}");
-            }
-        }
-        
+    class Exercise
+    { 
 
         static void Main(string[] args)
         {
-            var parent = new Person { Name = "John" };
-            var child1= new Person { Name = "Chris" };
-            var child2 = new Person { Name = "Mary" };
-
-            var relationships = new Relationships();
-            relationships.AddParentAndChild(parent, child1);
-            relationships.AddParentAndChild(parent, child2);
-
-            new Research(relationships);
+            var cb = new CodeBuilder("Person")
+                .AddField("Name", "string")
+                .AddField("Age", "int");
+            Console.WriteLine(cb);
         }
 
     }
