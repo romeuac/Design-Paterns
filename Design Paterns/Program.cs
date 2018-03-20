@@ -9,26 +9,33 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    // Reviewing FACTORY PATTERN
+    // Reviewing PROTOTYPE PATTERN - Deep Copying
 
-    public class Person
+    public class Point
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        public int X, Y;
+
+        public Point DeepCopy()
+        {
+            return new Point()
+            {
+                X = this.X,
+                Y = this.Y
+            };
+        }
     }
 
-    public class PersonFactory
+    public class Line
     {
-        public int idCounter { get; set; }
+        public Point Start, End;
 
-        public PersonFactory()
+        public Line DeepCopy()
         {
-            this.idCounter = 0;
-        }
-
-        public Person CreatePerson(string name)
-        {
-            return new Person() { Id = idCounter++, Name = name };
+            return new Line()
+            {
+                Start = this.Start.DeepCopy(),
+                End = this.End.DeepCopy()
+            };
         }
     }
 
@@ -37,11 +44,15 @@ namespace Design_Paterns
 
         static void Main(string[] args)
         {
-            var pFactory = new PersonFactory();
-            var p1 = pFactory.CreatePerson("Oio");
-            var p2 = pFactory.CreatePerson("Aia");
+            var line = new Line();
+            line.Start = new Point() { X = 1, Y = 2 };
+            line.End = new Point() { X = 1, Y = 2 };
 
-            Console.WriteLine($"Id0: {p1.Id}, Id1: {p2.Id}");
+            var line2 = line.DeepCopy();
+            line2.Start.X = 2;
+
+            Console.WriteLine($"Line 1, Start - X: {line.Start.X}, Y: {line.Start.Y}");
+            Console.WriteLine($"Line 2, Start - X: {line2.Start.X}, Y: {line2.Start.Y}");
 
 
         }
