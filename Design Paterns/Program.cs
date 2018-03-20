@@ -9,77 +9,41 @@ using System.Threading.Tasks;
 
 namespace Design_Paterns
 {
-    public class Code
-    {
-        public string className { get; set; }
-        public List<(string, string)> fields = new List<(string, string)>();
-         
-        //public List<string> fieldTypes = new List<string>();
-        //public List<string> fieldNames = new List<string>();
+    // Reviewing FACTORY PATTERN
 
+    public class Person
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 
-    // Separte component to build the object CODE
-    public class CodeBuilder
+    public class PersonFactory
     {
-        private Code code = new Code();
+        public int idCounter { get; set; }
 
-        public CodeBuilder(string className)
+        public PersonFactory()
         {
-            this.code.className = className ?? throw new ArgumentNullException(paramName: nameof(className));
+            this.idCounter = 0;
         }
 
-        public CodeBuilder AddField(string fieldName, string fieldType)
+        public Person CreatePerson(string name)
         {
-            code.fields.Add((fieldType, fieldName));
-            //code.fieldTypes.Add(fieldType);
-            //code.fieldNames.Add(fieldName);
-            return this;
-        }
-
-        private string ToStringImpl()
-        {
-            var sb = new StringBuilder();
-            int indentSize = 2;
-            var i = new string(' ', indentSize);
-
-            if (!string.IsNullOrEmpty(code.className))
-            {
-                //sb.Append(new string(' ', indentSize));
-                sb.AppendLine("public class " + code.className);
-                sb.AppendLine("{");
-            }
-
-            foreach (var field in code.fields)
-            {
-                sb.Append(new string(' ', indentSize));
-                sb.AppendLine("public " + field.Item1 + " " + field.Item2 + ";");
-            }
-
-            sb.AppendLine("}");
-            return sb.ToString();
-        }
-
-        public override string ToString()
-        {
-            return ToStringImpl();
+            return new Person() { Id = idCounter++, Name = name };
         }
     }
-
-    //public class FieldBuilder : CodeBuilder
-    //{
-
-    //}
 
     class Exercise
     { 
 
         static void Main(string[] args)
         {
-            var cb = new CodeBuilder("Person")
-                .AddField("Name", "string")
-                .AddField("Age", "int");
-            Console.WriteLine(cb);
+            var pFactory = new PersonFactory();
+            var p1 = pFactory.CreatePerson("Oio");
+            var p2 = pFactory.CreatePerson("Aia");
+
+            Console.WriteLine($"Id0: {p1.Id}, Id1: {p2.Id}");
+
+
         }
 
     }
